@@ -1,177 +1,923 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Checkmk",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Your Checkmk hosts and services in Gladys, with scenes when a host goes down or a service fails.",
+    "fr": "Vos hôtes et services Checkmk dans Gladys, et des scènes quand un hôte tombe ou un service échoue.",
+    "de": "Deine Checkmk-Hosts und -Services in Gladys, mit Szenen bei Host-Ausfällen und Service-Problemen.",
+    "es": "Sus hosts y servicios de Checkmk en Gladys, con escenas cuando un host cae o falla un servicio."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-checkmk:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-checkmk/main/cover.png",
+  "categories": ["network"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Checkmk site",
+        "fr": "Votre site Checkmk",
+        "de": "Deine Checkmk-Site",
+        "es": "Su sitio Checkmk"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "In Checkmk (2.2+), Setup → Users: create a user with an \"Automation secret for machine accounts\", role \"Normal monitoring user\", in a contact group of the hosts to follow. Then add the hosts from the Discover tab: scene triggers work for every host, added or not.",
+        "fr": "Dans Checkmk (2.2+), Setup → Users : créez un utilisateur avec un « Automation secret for machine accounts », rôle « Normal monitoring user », dans un groupe de contacts des hôtes. Ajoutez ensuite les hôtes depuis l'onglet Découverte : les déclencheurs valent pour tous.",
+        "de": "In Checkmk (2.2+), Setup → Users: Erstelle einen Benutzer mit „Automation secret for machine accounts“, Rolle „Normal monitoring user“, in einer Kontaktgruppe der Hosts. Lege die Hosts dann im Tab „Entdecken“ an: Die Auslöser gelten für alle Hosts.",
+        "es": "En Checkmk (2.2+), Setup → Users: cree un usuario con «Automation secret for machine accounts», rol «Normal monitoring user», en un grupo de contactos de los hosts. Después añada los hosts desde la pestaña Descubrir: los disparadores valen para todos."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-checkmk/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Installationsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://docs.checkmk.com/latest/en/wato_user.html#automation",
+          "label": {
+            "en": "Checkmk automation users",
+            "fr": "Utilisateurs d'automatisation de Checkmk",
+            "de": "Automationsbenutzer von Checkmk",
+            "es": "Usuarios de automatización de Checkmk"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "checkmk_url",
+      "type": "string",
+      "label": {
+        "en": "Site address",
+        "fr": "Adresse du site",
+        "de": "Adresse der Site",
+        "es": "Dirección del sitio"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The address you open Checkmk with, site name included; the REST API is found from it.",
+        "fr": "L'adresse avec laquelle vous ouvrez Checkmk, nom du site compris ; l'API REST s'en déduit.",
+        "de": "Die Adresse, mit der du Checkmk öffnest, samt Namen der Site; die REST-API ergibt sich daraus.",
+        "es": "La dirección con la que abre Checkmk, con el nombre del sitio; la API REST se deduce de ella."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.2/mysite",
+        "fr": "ex. http://192.168.1.2/monsite",
+        "de": "z. B. http://192.168.1.2/meinesite",
+        "es": "p. ej. http://192.168.1.2/misitio"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "Automation user",
+        "fr": "Utilisateur d'automatisation",
+        "de": "Automationsbenutzer",
+        "es": "Usuario de automatización"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "placeholder": {
+        "en": "e.g. gladys",
+        "fr": "ex. gladys",
+        "de": "z. B. gladys",
+        "es": "p. ej. gladys"
+      },
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "secret",
+      "type": "secret",
+      "label": {
+        "en": "Automation secret",
+        "fr": "Secret d'automatisation",
+        "de": "Automationsgeheimnis",
+        "es": "Secreto de automatización"
+      },
+      "description": {
+        "en": "A normal monitoring user is enough: it sees the hosts of its contact groups and may acknowledge them.",
+        "fr": "Un utilisateur de supervision normal suffit : il voit les hôtes de ses groupes de contacts et peut les acquitter.",
+        "de": "Ein normaler Monitoring-Benutzer genügt: Er sieht die Hosts seiner Kontaktgruppen und darf sie quittieren.",
+        "es": "Basta un usuario de monitorización normal: ve los hosts de sus grupos de contactos y puede reconocerlos."
+      },
+      "required": true
+    },
+    {
+      "key": "folder",
+      "type": "string",
+      "label": {
+        "en": "Folder (optional)",
+        "fr": "Dossier (facultatif)",
+        "de": "Ordner (optional)",
+        "es": "Carpeta (opcional)"
+      },
+      "description": {
+        "en": "Path of a Setup folder, subfolders included. Empty: every host the user can see.",
+        "fr": "Chemin d'un dossier de Setup, sous-dossiers compris. Vide : tous les hôtes que l'utilisateur voit.",
+        "de": "Pfad eines Setup-Ordners, Unterordner inklusive. Leer: alle Hosts, die der Benutzer sieht.",
+        "es": "Ruta de una carpeta de Setup, subcarpetas incluidas. Vacío: todos los hosts que ve el usuario."
+      },
+      "placeholder": {
+        "en": "e.g. /homelab",
+        "fr": "ex. /homelab",
+        "de": "z. B. /homelab",
+        "es": "p. ej. /homelab"
+      },
+      "required": false
+    },
+    {
+      "key": "labels",
+      "type": "string",
+      "label": {
+        "en": "Host labels (optional)",
+        "fr": "Étiquettes d'hôte (facultatif)",
+        "de": "Host-Labels (optional)",
+        "es": "Etiquetas de host (opcional)"
+      },
+      "description": {
+        "en": "key:value, separated by commas; a host must carry them all. A key alone: any value.",
+        "fr": "clé:valeur, séparées par des virgules ; un hôte doit toutes les porter. Une clé seule : toute valeur.",
+        "de": "Schlüssel:Wert, durch Kommas getrennt; ein Host muss alle tragen. Nur ein Schlüssel: jeder Wert.",
+        "es": "clave:valor, separadas por comas; un host debe llevarlas todas. Solo una clave: cualquier valor."
+      },
+      "placeholder": {
+        "en": "e.g. gladys:yes, cmk/os_family:linux",
+        "fr": "ex. gladys:yes, cmk/os_family:linux",
+        "de": "z. B. gladys:yes, cmk/os_family:linux",
+        "es": "p. ej. gladys:yes, cmk/os_family:linux"
+      },
+      "required": false
+    },
+    {
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Checkmk is read: two or three API requests each time.",
+        "fr": "Fréquence de lecture de Checkmk : deux ou trois requêtes d'API à chaque fois.",
+        "de": "Wie oft Checkmk gelesen wird: jedes Mal zwei oder drei API-Anfragen.",
+        "es": "Con qué frecuencia se lee Checkmk: dos o tres peticiones de API cada vez."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "60",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "allow_acknowledge",
+      "type": "boolean",
+      "label": {
+        "en": "Allow acknowledging from scenes",
+        "fr": "Autoriser l'acquittement depuis les scènes",
+        "de": "Quittieren aus Szenen erlauben",
+        "es": "Permitir reconocer desde escenas"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Untick to turn off the \"Acknowledge the problems of a host\" scene action.",
+        "fr": "Décochez pour désactiver l'action de scène « Acquitter les problèmes d'un hôte ».",
+        "de": "Deaktiviere es, um die Szenen-Aktion „Probleme eines Hosts quittieren“ auszuschalten.",
+        "es": "Desmarque para desactivar la acción de escena «Reconocer los problemas de un host»."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": true
+    },
+    {
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept self-signed certificates",
+        "fr": "Accepter les certificats auto-signés",
+        "de": "Selbstsignierte Zertifikate akzeptieren",
+        "es": "Aceptar certificados autofirmados"
+      },
+      "description": {
+        "en": "Only for an https:// address whose certificate your browser does not trust either.",
+        "fr": "Seulement pour une adresse en https:// dont le certificat n'est pas reconnu par votre navigateur non plus.",
+        "de": "Nur für eine https://-Adresse, deren Zertifikat auch dein Browser nicht anerkennt.",
+        "es": "Solo para una dirección https:// cuyo certificado tampoco reconoce su navegador."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
+      "description": {
+        "en": "Language of the feature names (set when a device is added) and of the scene results.",
+        "fr": "Langue des noms des fonctionnalités (fixés à l'ajout d'un appareil) et des résultats de scène.",
+        "de": "Sprache der Funktionsnamen (beim Hinzufügen eines Geräts festgelegt) und der Szenen-Ergebnisse.",
+        "es": "Idioma de los nombres de las funciones (fijados al añadir un dispositivo) y de los resultados de escena."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "host_down",
+      "label": {
+        "en": "A host goes down",
+        "fr": "Un hôte tombe",
+        "de": "Ein Host fällt aus",
+        "es": "Un host cae"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A Checkmk host goes DOWN or UNREACH (outside a downtime).",
+        "fr": "Un hôte Checkmk passe DOWN ou UNREACH (hors maintenance).",
+        "de": "Ein Checkmk-Host wird DOWN oder UNREACH (außerhalb einer Wartungszeit).",
+        "es": "Un host de Checkmk pasa a DOWN o UNREACH (fuera de un mantenimiento)."
       },
       "fields": [
         {
           "key": "device",
-          "type": "select",
+          "type": "multi_select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Hosts (empty: any)",
+            "fr": "Hôtes (vide : n'importe lequel)",
+            "de": "Hosts (leer: beliebig)",
+            "es": "Hosts (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "Only the devices added to Gladys can be chosen; empty works for every host.",
+            "fr": "Seuls les appareils ajoutés à Gladys se choisissent ; vide vaut pour tous les hôtes.",
+            "de": "Nur die in Gladys angelegten Geräte sind wählbar; leer gilt für alle Hosts.",
+            "es": "Solo se pueden elegir los dispositivos añadidos a Gladys; vacío vale para todos los hosts."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "host",
+          "type": "string",
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Hostname",
+            "es": "Nombre del host"
+          }
         },
         {
-          "key": "target",
+          "key": "state_name",
+          "type": "string",
+          "label": {
+            "en": "State",
+            "fr": "État",
+            "de": "Zustand",
+            "es": "Estado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "host_up",
+      "label": {
+        "en": "A host is back up",
+        "fr": "Un hôte revient",
+        "de": "Ein Host ist wieder da",
+        "es": "Un host vuelve"
+      },
+      "description": {
+        "en": "A Checkmk host announced down is UP again.",
+        "fr": "Un hôte Checkmk signalé tombé est de nouveau UP.",
+        "de": "Ein als ausgefallen gemeldeter Checkmk-Host ist wieder UP.",
+        "es": "Un host de Checkmk notificado como caído vuelve a estar UP."
+      },
+      "fields": [
+        {
+          "key": "device",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "source": "devices",
+          "label": {
+            "en": "Hosts (empty: any)",
+            "fr": "Hôtes (vide : n'importe lequel)",
+            "de": "Hosts (leer: beliebig)",
+            "es": "Hosts (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "Only the devices added to Gladys can be chosen; empty works for every host.",
+            "fr": "Seuls les appareils ajoutés à Gladys se choisissent ; vide vaut pour tous les hôtes.",
+            "de": "Nur die in Gladys angelegten Geräte sind wählbar; leer gilt für alle Hosts.",
+            "es": "Solo se pueden elegir los dispositivos añadidos a Gladys; vacío vale para todos los hosts."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "host",
+          "type": "string",
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Hostname",
+            "es": "Nombre del host"
+          }
+        },
+        {
+          "key": "duration_minutes",
+          "type": "number",
+          "label": {
+            "en": "Duration (minutes)",
+            "fr": "Durée (minutes)",
+            "de": "Dauer (Minuten)",
+            "es": "Duración (minutos)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "service_problem",
+      "label": {
+        "en": "A service has a problem",
+        "fr": "Un service pose problème",
+        "de": "Ein Service hat ein Problem",
+        "es": "Un servicio tiene un problema"
+      },
+      "description": {
+        "en": "A service enters WARN, CRIT or UNKNOWN, or changes between them (outside a downtime).",
+        "fr": "Un service passe WARN, CRIT ou UNKNOWN, ou change entre eux (hors maintenance).",
+        "de": "Ein Service wird WARN, CRIT oder UNKNOWN oder wechselt zwischen ihnen (außerhalb einer Wartungszeit).",
+        "es": "Un servicio pasa a WARN, CRIT o UNKNOWN, o cambia entre ellos (fuera de un mantenimiento)."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Hosts (empty: any)",
+            "fr": "Hôtes (vide : n'importe lequel)",
+            "de": "Hosts (leer: beliebig)",
+            "es": "Hosts (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "Only the devices added to Gladys can be chosen; empty works for every host.",
+            "fr": "Seuls les appareils ajoutés à Gladys se choisissent ; vide vaut pour tous les hôtes.",
+            "de": "Nur die in Gladys angelegten Geräte sind wählbar; leer gilt für alle Hosts.",
+            "es": "Solo se pueden elegir los dispositivos añadidos a Gladys; vacío vale para todos los hosts."
+          }
+        },
+        {
+          "key": "state",
+          "type": "multi_select",
+          "label": {
+            "en": "States (empty: any)",
+            "fr": "États (vide : n'importe lequel)",
+            "de": "Zustände (leer: beliebig)",
+            "es": "Estados (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "The new state. For \"CRIT only\", choose CRIT.",
+            "fr": "Le nouvel état. Pour « CRIT seulement », choisissez CRIT.",
+            "de": "Der neue Zustand. Für „nur CRIT“ wähle CRIT.",
+            "es": "El nuevo estado. Para «solo CRIT», elija CRIT."
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "1",
+              "label": {
+                "en": "WARN",
+                "fr": "WARN",
+                "de": "WARN",
+                "es": "WARN"
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "en": "CRIT",
+                "fr": "CRIT",
+                "de": "CRIT",
+                "es": "CRIT"
+              }
+            },
+            {
+              "value": "3",
+              "label": {
+                "en": "UNKNOWN",
+                "fr": "UNKNOWN",
+                "de": "UNKNOWN",
+                "es": "UNKNOWN"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "host",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Hostname",
+            "es": "Nombre del host"
+          }
+        },
+        {
+          "key": "service",
+          "type": "string",
+          "label": {
+            "en": "Service",
+            "fr": "Service",
+            "de": "Service",
+            "es": "Servicio"
+          }
+        },
+        {
+          "key": "state_name",
+          "type": "string",
+          "label": {
+            "en": "State",
+            "fr": "État",
+            "de": "Zustand",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "output",
+          "type": "string",
+          "label": {
+            "en": "Check output",
+            "fr": "Sortie du check",
+            "de": "Check-Ausgabe",
+            "es": "Salida del check"
+          }
+        }
+      ]
+    },
+    {
+      "key": "service_recovered",
+      "label": {
+        "en": "A service is OK again",
+        "fr": "Un service revient OK",
+        "de": "Ein Service ist wieder OK",
+        "es": "Un servicio vuelve a OK"
+      },
+      "description": {
+        "en": "A service announced in problem is OK again.",
+        "fr": "Un service signalé en problème est de nouveau OK.",
+        "de": "Ein als Problem gemeldeter Service ist wieder OK.",
+        "es": "Un servicio notificado con problema vuelve a estar OK."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Hosts (empty: any)",
+            "fr": "Hôtes (vide : n'importe lequel)",
+            "de": "Hosts (leer: beliebig)",
+            "es": "Hosts (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "Only the devices added to Gladys can be chosen; empty works for every host.",
+            "fr": "Seuls les appareils ajoutés à Gladys se choisissent ; vide vaut pour tous les hôtes.",
+            "de": "Nur die in Gladys angelegten Geräte sind wählbar; leer gilt für alle Hosts.",
+            "es": "Solo se pueden elegir los dispositivos añadidos a Gladys; vacío vale para todos los hosts."
+          }
+        },
+        {
+          "key": "state",
+          "type": "multi_select",
+          "label": {
+            "en": "States (empty: any)",
+            "fr": "États (vide : n'importe lequel)",
+            "de": "Zustände (leer: beliebig)",
+            "es": "Estados (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "The last problem state announced.",
+            "fr": "Le dernier état de problème signalé.",
+            "de": "Der zuletzt gemeldete Problemzustand.",
+            "es": "El último estado de problema notificado."
+          },
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "en": "WARN",
+                "fr": "WARN",
+                "de": "WARN",
+                "es": "WARN"
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "en": "CRIT",
+                "fr": "CRIT",
+                "de": "CRIT",
+                "es": "CRIT"
+              }
+            },
+            {
+              "value": "3",
+              "label": {
+                "en": "UNKNOWN",
+                "fr": "UNKNOWN",
+                "de": "UNKNOWN",
+                "es": "UNKNOWN"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "host",
+          "type": "string",
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Hostname",
+            "es": "Nombre del host"
+          }
+        },
+        {
+          "key": "service",
+          "type": "string",
+          "label": {
+            "en": "Service",
+            "fr": "Service",
+            "de": "Service",
+            "es": "Servicio"
+          }
+        },
+        {
+          "key": "state_name",
+          "type": "string",
+          "label": {
+            "en": "Last problem state",
+            "fr": "Dernier état de problème",
+            "de": "Letzter Problemzustand",
+            "es": "Último estado de problema"
+          }
+        },
+        {
+          "key": "duration_minutes",
+          "type": "number",
+          "label": {
+            "en": "Duration (minutes)",
+            "fr": "Durée (minutes)",
+            "de": "Dauer (Minuten)",
+            "es": "Duración (minutos)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "site_unreachable",
+      "label": {
+        "en": "Checkmk no longer answers",
+        "fr": "Checkmk ne répond plus",
+        "de": "Checkmk antwortet nicht mehr",
+        "es": "Checkmk ya no responde"
+      },
+      "description": {
+        "en": "The REST API of the site fails to answer twice in a row.",
+        "fr": "L'API REST du site ne répond pas deux fois de suite.",
+        "de": "Die REST-API der Site antwortet zweimal hintereinander nicht.",
+        "es": "La API REST del sitio no responde dos veces seguidas."
+      },
+      "variables": [
+        {
+          "key": "site",
+          "type": "string",
+          "label": {
+            "en": "Site address",
+            "fr": "Adresse du site",
+            "de": "Adresse der Site",
+            "es": "Dirección del sitio"
+          }
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "label": {
+            "en": "Error",
+            "fr": "Erreur",
+            "de": "Fehler",
+            "es": "Error"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "acknowledge_host_problems",
+      "label": {
+        "en": "Acknowledge the problems of a host",
+        "fr": "Acquitter les problèmes d'un hôte",
+        "de": "Probleme eines Hosts quittieren",
+        "es": "Reconocer los problemas de un host"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Acknowledges in Checkmk the host problem and its services in problem, with a comment.",
+        "fr": "Acquitte dans Checkmk le problème de l'hôte et ses services en problème, avec un commentaire.",
+        "de": "Quittiert in Checkmk das Host-Problem und seine Services mit Problem, mit einem Kommentar.",
+        "es": "Reconoce en Checkmk el problema del host y sus servicios con problemas, con un comentario."
+      },
+      "timeout_seconds": 60,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Host"
+          },
           "required": true
+        },
+        {
+          "key": "message",
+          "type": "string",
+          "label": {
+            "en": "Comment (optional)",
+            "fr": "Commentaire (facultatif)",
+            "de": "Kommentar (optional)",
+            "es": "Comentario (opcional)"
+          },
+          "description": {
+            "en": "Empty: \"Acknowledged from Gladys\".",
+            "fr": "Vide : « Acquitté depuis Gladys ».",
+            "de": "Leer: „In Gladys quittiert“.",
+            "es": "Vacío: «Reconocido desde Gladys»."
+          },
+          "required": false
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "acknowledged",
+          "type": "number",
+          "label": {
+            "en": "Problems acknowledged",
+            "fr": "Problèmes acquittés",
+            "de": "Quittierte Probleme",
+            "es": "Problemas reconocidos"
+          }
+        }
+      ]
+    },
+    {
+      "key": "get_problems",
+      "label": {
+        "en": "Read the problems",
+        "fr": "Lire les problèmes",
+        "de": "Probleme lesen",
+        "es": "Leer los problemas"
+      },
+      "description": {
+        "en": "Counts and lists the hosts down and services in problem, of one host or of all.",
+        "fr": "Compte et liste les hôtes tombés et les services en problème, d'un hôte ou de tous.",
+        "de": "Zählt und listet ausgefallene Hosts und Services mit Problem, eines Hosts oder aller.",
+        "es": "Cuenta y enumera los hosts caídos y los servicios con problemas, de un host o de todos."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Host (empty: all)",
+            "fr": "Hôte (vide : tous)",
+            "de": "Host (leer: alle)",
+            "es": "Host (vacío: todos)"
+          },
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Problems",
+            "fr": "Problèmes",
+            "de": "Probleme",
+            "es": "Problemas"
+          }
+        },
+        {
+          "key": "unhandled",
+          "type": "number",
+          "label": {
+            "en": "Unhandled problems",
+            "fr": "Problèmes non traités",
+            "de": "Unbehandelte Probleme",
+            "es": "Problemas sin gestionar"
+          }
+        },
+        {
+          "key": "hosts_down",
+          "type": "number",
+          "label": {
+            "en": "Hosts down",
+            "fr": "Hôtes DOWN",
+            "de": "Hosts DOWN",
+            "es": "Hosts DOWN"
+          }
+        },
+        {
+          "key": "services_crit",
+          "type": "number",
+          "label": {
+            "en": "Services CRIT",
+            "fr": "Services CRIT",
+            "de": "Services CRIT",
+            "es": "Servicios CRIT"
+          }
+        },
+        {
+          "key": "services_warn",
+          "type": "number",
+          "label": {
+            "en": "Services WARN",
+            "fr": "Services WARN",
+            "de": "Services WARN",
+            "es": "Servicios WARN"
+          }
+        },
+        {
+          "key": "services_unknown",
+          "type": "number",
+          "label": {
+            "en": "Services UNKNOWN",
+            "fr": "Services UNKNOWN",
+            "de": "Services UNKNOWN",
+            "es": "Servicios UNKNOWN"
+          }
+        },
+        {
+          "key": "names",
+          "type": "string",
+          "label": {
+            "en": "Problems (host: problem)",
+            "fr": "Problèmes (hôte : problème)",
+            "de": "Probleme (Host: Problem)",
+            "es": "Problemas (host: problema)"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "problems",
+      "label": {
+        "en": "Checkmk problems",
+        "fr": "Problèmes Checkmk",
+        "de": "Checkmk-Probleme",
+        "es": "Problemas de Checkmk"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Hosts down and services in problem, the most serious first.",
+        "fr": "Hôtes tombés et services en problème, les plus graves d'abord.",
+        "de": "Ausgefallene Hosts und Services mit Problem, die schwersten zuerst.",
+        "es": "Hosts caídos y servicios con problemas, los más graves primero."
+      },
+      "icon": "alert-triangle",
+      "action_timeout_seconds": 30,
+      "settings": [
+        {
+          "key": "hosts",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Hosts (empty: all)",
+            "fr": "Hôtes (vide : tous)",
+            "de": "Hosts (leer: alle)",
+            "es": "Hosts (vacío: todos)"
+          },
+          "description": {
+            "en": "Only the devices added to Gladys can be chosen.",
+            "fr": "Seuls les appareils ajoutés à Gladys se choisissent.",
+            "de": "Nur die in Gladys angelegten Geräte sind wählbar.",
+            "es": "Solo se pueden elegir los dispositivos añadidos a Gladys."
+          },
+          "required": false
+        }
+      ]
     }
   ]
 }

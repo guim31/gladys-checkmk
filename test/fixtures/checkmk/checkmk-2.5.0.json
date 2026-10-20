@@ -1,0 +1,404 @@
+{
+  "version": {
+    "request": {
+      "method": "GET",
+      "path": "/version",
+      "params": null
+    },
+    "status": 200,
+    "response": {
+      "site": "cmk",
+      "group": "",
+      "rest_api": {
+        "revision": "0"
+      },
+      "versions": {
+        "apache": [2, 4, 52],
+        "checkmk": "2.5.0p16.community",
+        "python": "3.13.14 (main, Jul 16 2026, 06:21:46) [GCC 14.2.0]",
+        "mod_wsgi": [5, 0, 2],
+        "wsgi": [1, 0]
+      },
+      "edition": "community",
+      "demo": false
+    }
+  },
+  "hosts": {
+    "request": {
+      "method": "GET",
+      "path": "/domain-types/host/collections/all",
+      "params": {
+        "columns": [
+          "name",
+          "alias",
+          "state",
+          "has_been_checked",
+          "acknowledged",
+          "scheduled_downtime_depth",
+          "labels",
+          "filename",
+          "last_state_change"
+        ]
+      }
+    },
+    "status": 200,
+    "response": {
+      "links": [
+        {
+          "domainType": "link",
+          "rel": "self",
+          "href": "http://192.0.2.10/cmk/check_mk/api/1.0/domain-types/host/collections/all",
+          "method": "GET",
+          "type": "application/json"
+        }
+      ],
+      "id": "host",
+      "domainType": "host",
+      "value": [
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "self",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/outside",
+              "method": "GET",
+              "type": "application/json"
+            }
+          ],
+          "domainType": "dict",
+          "id": "outside",
+          "title": "outside",
+          "members": {},
+          "extensions": {
+            "name": "outside",
+            "alias": "outside",
+            "state": 0,
+            "has_been_checked": 1,
+            "acknowledged": 0,
+            "scheduled_downtime_depth": 2,
+            "labels": {
+              "cmk/site": "cmk"
+            },
+            "filename": "/wato/hosts.mk",
+            "last_state_change": 1792479719
+          }
+        },
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "self",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/localhost",
+              "method": "GET",
+              "type": "application/json"
+            }
+          ],
+          "domainType": "dict",
+          "id": "localhost",
+          "title": "localhost",
+          "members": {},
+          "extensions": {
+            "name": "localhost",
+            "alias": "localhost",
+            "state": 0,
+            "has_been_checked": 1,
+            "acknowledged": 0,
+            "scheduled_downtime_depth": 0,
+            "labels": {
+              "cmk/os_family": "linux",
+              "cmk/os_platform": "ubuntu",
+              "cmk/device_type": "container",
+              "cmk/os_name": "Ubuntu",
+              "cmk/os_type": "linux",
+              "cmk/check_mk_server": "yes",
+              "cmk/site": "cmk",
+              "cmk/os_version": "22.04",
+              "room": "rack"
+            },
+            "filename": "/wato/homelab/hosts.mk",
+            "last_state_change": 1792479662
+          }
+        },
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "self",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/deadhost",
+              "method": "GET",
+              "type": "application/json"
+            }
+          ],
+          "domainType": "dict",
+          "id": "deadhost",
+          "title": "deadhost",
+          "members": {},
+          "extensions": {
+            "name": "deadhost",
+            "alias": "deadhost",
+            "state": 1,
+            "has_been_checked": 1,
+            "acknowledged": 1,
+            "scheduled_downtime_depth": 0,
+            "labels": {
+              "cmk/site": "cmk"
+            },
+            "filename": "/wato/homelab/hosts.mk",
+            "last_state_change": 1792479319
+          }
+        },
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "self",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/behindhost",
+              "method": "GET",
+              "type": "application/json"
+            }
+          ],
+          "domainType": "dict",
+          "id": "behindhost",
+          "title": "behindhost",
+          "members": {},
+          "extensions": {
+            "name": "behindhost",
+            "alias": "behindhost",
+            "state": 2,
+            "has_been_checked": 1,
+            "acknowledged": 0,
+            "scheduled_downtime_depth": 0,
+            "labels": {
+              "cmk/site": "cmk"
+            },
+            "filename": "/wato/homelab/hosts.mk",
+            "last_state_change": 1792479380
+          }
+        }
+      ],
+      "extensions": {}
+    }
+  },
+  "services": {
+    "request": {
+      "method": "GET",
+      "path": "/domain-types/service/collections/all",
+      "params": {
+        "query": "{\"op\": \"!=\", \"left\": \"state\", \"right\": \"0\"}",
+        "columns": [
+          "host_name",
+          "description",
+          "state",
+          "acknowledged",
+          "scheduled_downtime_depth",
+          "last_state_change",
+          "plugin_output"
+        ]
+      }
+    },
+    "status": 200,
+    "response": {
+      "links": [
+        {
+          "domainType": "link",
+          "rel": "self",
+          "href": "http://192.0.2.10/cmk/check_mk/api/1.0/domain-types/service/collections/all",
+          "method": "GET",
+          "type": "application/json"
+        }
+      ],
+      "id": "service",
+      "domainType": "service",
+      "value": [
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "urn:com.checkmk:rels/show",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/behindhost/actions/show_service/invoke?service_description=PING",
+              "method": "GET",
+              "type": "application/json",
+              "title": "Show the service PING"
+            }
+          ],
+          "domainType": "dict",
+          "id": "behindhost:PING",
+          "title": "PING on behindhost",
+          "members": {},
+          "extensions": {
+            "host_name": "behindhost",
+            "description": "PING",
+            "state": 2,
+            "acknowledged": 0,
+            "scheduled_downtime_depth": 0,
+            "last_state_change": 1792479619,
+            "plugin_output": "CRITICAL - 192.0.2.2: rta nan, lost 100%"
+          }
+        },
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "urn:com.checkmk:rels/show",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/localhost/actions/show_service/invoke?service_description=Disk+space",
+              "method": "GET",
+              "type": "application/json",
+              "title": "Show the service Disk space"
+            }
+          ],
+          "domainType": "dict",
+          "id": "localhost:Disk space",
+          "title": "Disk space on localhost",
+          "members": {},
+          "extensions": {
+            "host_name": "localhost",
+            "description": "Disk space",
+            "state": 1,
+            "acknowledged": 1,
+            "scheduled_downtime_depth": 0,
+            "last_state_change": 1792479678,
+            "plugin_output": "85 percent used"
+          }
+        },
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "urn:com.checkmk:rels/show",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/localhost/actions/show_service/invoke?service_description=Check_MK+Discovery",
+              "method": "GET",
+              "type": "application/json",
+              "title": "Show the service Check_MK Discovery"
+            }
+          ],
+          "domainType": "dict",
+          "id": "localhost:Check_MK Discovery",
+          "title": "Check_MK Discovery on localhost",
+          "members": {},
+          "extensions": {
+            "host_name": "localhost",
+            "description": "Check_MK Discovery",
+            "state": 1,
+            "acknowledged": 0,
+            "scheduled_downtime_depth": 0,
+            "last_state_change": 1792479662,
+            "plugin_output": "Services unmonitored: 7 (ps: 7)(!), Host labels: all up to date, execution time 0.0 sec"
+          }
+        },
+        {
+          "links": [
+            {
+              "domainType": "link",
+              "rel": "urn:com.checkmk:rels/show",
+              "href": "http://192.0.2.10/cmk/check_mk/api/1.0/objects/host/localhost/actions/show_service/invoke?service_description=Gladys_test",
+              "method": "GET",
+              "type": "application/json",
+              "title": "Show the service Gladys_test"
+            }
+          ],
+          "domainType": "dict",
+          "id": "localhost:Gladys_test",
+          "title": "Gladys_test on localhost",
+          "members": {},
+          "extensions": {
+            "host_name": "localhost",
+            "description": "Gladys_test",
+            "state": 2,
+            "acknowledged": 0,
+            "scheduled_downtime_depth": 0,
+            "last_state_change": 1792479678,
+            "plugin_output": "forced critical for the test"
+          }
+        }
+      ],
+      "extensions": {}
+    }
+  },
+  "bad_credentials": {
+    "request": {
+      "method": "GET",
+      "path": "/version",
+      "params": null
+    },
+    "status": 401,
+    "response": {
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Wrong credentials (Bearer header)"
+    }
+  },
+  "no_credentials": {
+    "request": {
+      "method": "GET",
+      "path": "/version",
+      "params": null
+    },
+    "status": 401,
+    "response": {
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Couldn't log in."
+    }
+  },
+  "acknowledge_host_without_problem": {
+    "request": {
+      "method": "POST",
+      "path": "/domain-types/acknowledge/collections/host",
+      "params": null,
+      "body": {
+        "acknowledge_type": "host",
+        "host_name": "localhost",
+        "sticky": true,
+        "persistent": false,
+        "notify": false,
+        "comment": "Acknowledged from Gladys"
+      }
+    },
+    "status": 422,
+    "response": {
+      "title": "Host 'localhost' has no problem.",
+      "status": 422,
+      "detail": "You can't acknowledge a problem that doesn't exist."
+    }
+  },
+  "acknowledge_service_ok": {
+    "request": {
+      "method": "POST",
+      "path": "/domain-types/acknowledge/collections/service",
+      "params": null,
+      "body": {
+        "acknowledge_type": "service",
+        "host_name": "localhost",
+        "service_description": "PING",
+        "sticky": true,
+        "persistent": false,
+        "notify": false,
+        "comment": "Acknowledged from Gladys"
+      }
+    },
+    "status": 400,
+    "response": {
+      "title": "Service not found",
+      "status": 400,
+      "detail": "Service 'PING'@'localhost' could not be found."
+    }
+  },
+  "acknowledge_service": {
+    "request": {
+      "method": "POST",
+      "path": "/domain-types/acknowledge/collections/service",
+      "params": null,
+      "body": {
+        "acknowledge_type": "service",
+        "host_name": "localhost",
+        "service_description": "Gladys_test",
+        "sticky": true,
+        "persistent": false,
+        "notify": false,
+        "comment": "Acknowledged from Gladys"
+      }
+    },
+    "status": 204,
+    "response": null
+  }
+}

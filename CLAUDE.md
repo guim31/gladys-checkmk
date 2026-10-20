@@ -16,8 +16,8 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "widget"  # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
@@ -31,16 +31,22 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, states (changes + heartbeat), scene events, views
+src/devices.js                    host and site devices, feature names (4 languages), values
+src/checkmk/client.js             REST API: version, hosts, services not OK, scope, acknowledge
+src/checkmk/http.js               node:http/https GET/POST (self-signed certificates on request)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    dashboard widget `problems` (manifest `widgets`)
+src/texts.js                      connection, error, report, action texts (4 languages)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+src/store.js                      /data/checkmk-state.json (the problems already seen)
+src/logs.js                       repeated failures logged once, then once when they heal
+gladys-assistant-integration.json manifest: name, config_schema, actions, triggers, widget...
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeCheckmk.js (real answers in test/fixtures/checkmk)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +76,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget texts, feature names, manifest texts, and
+  `docs/{en,fr,de,es}.md`, kept in sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +240,60 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Checkmk (propre à ce dépôt)
+
+- **API** : REST de Checkmk ≥ 2.2, `/<site>/check_mk/api/1.0`, utilisateur d'automatisation en
+  `Authorization: Bearer <user> <secret>` (pas de mot de passe stocké). `version` **exige aussi
+  l'authentification** (401 sinon) : c'est la première requête, elle sert de test des identifiants.
+  Réponses d'erreur en `application/problem+json` (`title`, `status`, `detail`) ; un mauvais nom de
+  site donne un **404 HTML d'Apache** (`not_checkmk`). Adresse : tout ce qui précède `/check_mk`
+  est le chemin du site ; sans chemin, pas de site (adresse refusée).
+- **Lecture** : vues Livestatus de l'API, `GET domain-types/host/collections/all` et
+  `…/service/collections/all` avec `columns` répétés et `query` JSON (`state != 0` pour les
+  services). Hôtes : `state` 0 UP / 1 DOWN / 2 UNREACH, `has_been_checked` 0 = PENDING (rien publié
+  pour « Hôte UP »), `scheduled_downtime_depth` (2 pour deux downtimes : tester `> 0`), `labels`
+  (objet), `filename` = `/wato/<dossier>/hosts.mk` (`/wato/hosts.mk` à la racine) → dossier de Setup.
+  Le filtre de dossier compare sans casse (Setup montre les titres, le chemin porte les noms) et
+  prend les sous-dossiers ; dossier et étiquettes sont filtrés côté intégration.
+- **Piège : cœur de supervision arrêté** (`omd stop nagios`, 2.5.0p16) : l'API répond **200 avec
+  une liste d'hôtes vide**. Pris tel quel, tout serait « résolu » puis ré-annoncé au retour du cœur.
+  Liste vide = erreur `no_hosts` (« aucun hôte visible », aussi le symptôme d'un utilisateur dans
+  aucun groupe de contacts) : les données précédentes restent, aucun événement.
+- **Acquittement** : `POST domain-types/acknowledge/collections/host` (`acknowledge_type: host`) et
+  `…/service` (`acknowledge_type: service`, `service_description`), `sticky: true`,
+  `notify: false`, réponse **204**. Un hôte UP répond **422** « has no problem », un service OK
+  **400** « Service not found » : problème disparu entre-temps, ignoré. Le rôle « Normal monitoring
+  user » peut acquitter (vérifié). Une requête par problème.
+- **Événements de scène** : premier passage (ou nouveau périmètre : adresse, dossier, étiquettes,
+  utilisateur et secret hachés) enregistré sans annonce. Hôte : `host_down` au passage DOWN ou
+  UNREACH (une seule fois, DOWN → UNREACH n'est pas ré-annoncé), `host_up` au retour s'il a été
+  annoncé ; un hôte disparu (supprimé, hors périmètre) est oublié sans événement, ses services
+  aussi. Service (clé `hôte\nservice`) : `service_problem` à chaque nouvel état de problème
+  annoncé (WARN → CRIT compris), `service_recovered` quand il quitte la liste des non-OK alors
+  que son hôte est toujours là. En **downtime** (du service ou de l'hôte), rien n'est annoncé ;
+  ce qui reste à la fin l'est alors. Marqué annoncé seulement après acceptation par Gladys, 30
+  événements au plus par lecture. Le filtre `state` est un `multi_select` de `"1"`…`"3"` ; pour
+  `service_recovered`, il porte le dernier état de problème annoncé.
+- **Lectures concurrentes** : comme gladys-zabbix (génération, `fresh` après un acquittement).
+- **Journaux** : changements d'état en debug ; l'info garde le démarrage, la version, la perte et
+  le retour de Checkmk, une ligne par acquittement.
+
+## Vérifié sur un vrai Checkmk (20/10/2026)
+
+Image Docker de l'intégration avec les contraintes du bac à sable (`--cap-drop ALL --security-opt
+no-new-privileges --read-only --memory 256m --pids-limit 256`, volume `/data`, réseau en pont
+`gladys-test-checkmk`, aucun port publié) contre l'image officielle `checkmk/check-mk-community`
+**2.5.0p16** (cœur Nagios), site `cmk`, utilisateur d'automatisation au rôle « Normal monitoring
+user » dans le groupe `all` : `localhost` supervisé par l'agent du conteneur (règle
+`datasource_programs` vers `check_mk_agent.linux`, à rendre exécutable) avec des checks locaux
+pilotés par fichier, un hôte injoignable (DOWN), un hôte derrière lui (parent : UNREACH), un hôte
+en downtime.
+
+- Sans Gladys : reconnexion du SDK, pas de plantage, aucun secret dans les logs, ~19 Mo au repos,
+  arrêt propre sur SIGTERM (code 0).
+- Faux Gladys du SDK dans le conteneur verrouillé : découverte, états, « Tester la connexion »,
+  widget, `get_problems`, acquittement (204, relu aussitôt), `service_problem` WARN → CRIT et
+  `service_recovered` en direct ; secret refusé (`auth`), mauvais site (`not_checkmk`), port fermé
+  (`unreachable`).
+- Non vérifié en réel : Checkmk 2.2 à 2.4, éditions commerciales (même API documentée), HTTPS.
