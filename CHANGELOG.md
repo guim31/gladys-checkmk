@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-20
+
 ### Added
 
 - One device per Checkmk host (every host the automation user sees, or a
@@ -27,4 +29,5 @@ the notes of the version's GitHub Release.
 - Checkmk 2.2 or later (REST API, automation user), every edition; feature
   names, messages and documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-checkmk/commits/main
+[Unreleased]: https://github.com/guim31/gladys-checkmk/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-checkmk/releases/tag/v1.0.0
