@@ -1,67 +1,190 @@
-# Template de démonstration
+# Checkmk
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Amenez votre supervision [Checkmk](https://checkmk.com/) dans Gladys : chaque
+hôte devient un appareil (UP, services en WARN, CRIT et UNKNOWN, problèmes non
+traités, maintenance), un appareil « Checkmk » résume tout le site, et vos
+scènes réagissent quand un hôte tombe ou qu'un service échoue — une lumière
+rouge quand le NAS est tombé, un message quand un disque passe CRIT. Une scène
+peut aussi acquitter les problèmes d'un hôte, et un widget du tableau de bord
+liste les problèmes en cours.
 
-## Ce que vous obtenez
+L'intégration lit l'API REST de votre site Checkmk sur votre réseau local,
+avec un utilisateur d'automatisation. Rien ne passe par un cloud.
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Testée sur un vrai Checkmk 2.5 Community (image Docker officielle, un hôte
+supervisé par son agent, des hôtes DOWN et UNREACH, des checks locaux forcés
+en WARN et CRIT, une maintenance) ; de la 2.2 à la 2.4 seulement par la même
+API documentée. Vos retours sont les bienvenus :
+[github.com/guim31/gladys-checkmk/issues](https://github.com/guim31/gladys-checkmk/issues).
 
-## Configuration
+## Ce qu'il vous faut
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+- Gladys Assistant 5.1.0 ou plus récent.
+- Checkmk 2.2 ou plus récent, toutes éditions (Community, ex-Raw, comprise),
+  joignable depuis la machine de Gladys.
+- Un utilisateur d'automatisation pour Gladys. Le rôle « Normal monitoring
+  user » suffit : il voit les hôtes de ses groupes de contacts et peut acquitter
+  leurs problèmes.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## Mise en route
 
-## Actions
+### 1. Créer un utilisateur d'automatisation
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Dans Checkmk, ouvrez **Setup → Users → Add user** :
 
-## Scènes
+- **Username** : par exemple `gladys` ;
+- **Authentication** : « Automation secret for machine accounts », et copiez
+  le secret ;
+- **Roles** : « Normal monitoring user » ;
+- **Contact groups** : les groupes des hôtes à suivre (`all` par défaut).
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Enregistrez, puis **activez les changements**.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+### 2. Configurer l'intégration
+
+Dans Gladys, ouvrez la configuration de l'intégration :
+
+- **Adresse du site** : l'adresse avec laquelle vous ouvrez Checkmk, nom du
+  site compris, par exemple `http://192.168.1.2/monsite`. N'importe quelle page
+  du site copiée depuis le navigateur convient aussi.
+- **Utilisateur d'automatisation** et **Secret d'automatisation** :
+  l'utilisateur de l'étape 1.
+- **Dossier (facultatif)** : le chemin d'un dossier de Setup, par exemple
+  `/homelab`, sous-dossiers compris. C'est le chemin du dossier (son nom dans
+  l'URL), pas toujours son titre. Vide : tous les hôtes que l'utilisateur voit.
+- **Étiquettes d'hôte (facultatif)** : `clé:valeur` séparées par des virgules,
+  par exemple `gladys:yes` ; un hôte doit toutes les porter. Une clé seule
+  accepte toute valeur.
+- **Intervalle de rafraîchissement** : de 30 secondes à 5 minutes (1 minute
+  par défaut).
+- **Autoriser l'acquittement depuis les scènes** : décochez pour désactiver
+  l'action d'acquittement.
+- **Accepter les certificats auto-signés** : pour une adresse en `https://`
+  dont le certificat n'est pas reconnu par votre navigateur non plus.
+- **Langue des noms** : langue des noms des fonctionnalités et des résultats
+  de scène.
+
+Enregistrez, puis cliquez sur **Tester la connexion** : elle affiche la
+version de Checkmk, le nombre d'hôtes, d'hôtes DOWN et de services en
+problème.
+
+### 3. Ajouter les appareils
+
+Ouvrez l'onglet **Découverte** de l'intégration et ajoutez les hôtes à suivre,
+et l'appareil « Checkmk » si vous voulez les totaux. Les déclencheurs de scène
+valent pour tous les hôtes, ajoutés à Gladys ou non.
+
+## Les appareils
+
+Chaque **hôte** :
+
+| Fonctionnalité        | Valeur                                                             |
+| --------------------- | ------------------------------------------------------------------ |
+| Hôte UP               | 1 UP, 0 DOWN ou UNREACH ; vide tant que l'hôte est PENDING         |
+| Services WARN         | nombre de services en WARN                                         |
+| Services CRIT         | nombre de services en CRIT                                         |
+| Services UNKNOWN      | nombre de services en UNKNOWN                                      |
+| Problèmes non traités | problèmes de l'hôte et des services ni acquittés ni en maintenance |
+| En maintenance        | 1 pendant une maintenance planifiée (downtime) de l'hôte           |
+
+L'appareil **Checkmk** : Hôtes DOWN (DOWN ou UNREACH), Services WARN, Services
+CRIT, Services UNKNOWN et Problèmes non traités, sur les hôtes de la
+configuration.
+
+Les valeurs ne sont envoyées à Gladys que lorsqu'elles changent, et toutes les
+6 heures sinon.
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Le widget **Problèmes Checkmk** affiche trois tuiles — les hôtes DOWN, les
+services CRIT, les problèmes non traités — et les problèmes : hôtes DOWN, puis
+UNREACH, puis services CRIT, UNKNOWN et WARN, les plus récents d'abord. Chaque
+ligne donne le service et son état, l'hôte, ✓ une fois acquitté et ⏸ en
+maintenance. Dix lignes au plus. **Actualiser** relit Checkmk. Dans ses
+réglages, choisissez des hôtes pour n'afficher que les leurs (vide : tous les
+hôtes).
+
+## Scènes
+
+### Déclencheurs
+
+- **Un hôte tombe** : un hôte passe DOWN ou UNREACH. Filtre : hôtes (vide :
+  n'importe lequel). Variables : nom de l'hôte, état (DOWN, UNREACH). Un hôte
+  qui passe de DOWN à UNREACH n'est pas signalé deux fois.
+- **Un hôte revient** : un hôte signalé tombé est de nouveau UP. Variables :
+  nom de l'hôte, durée en minutes.
+- **Un service pose problème** : un service passe WARN, CRIT ou UNKNOWN, ou
+  change entre eux (de WARN à CRIT, par exemple). Filtres : hôtes, états (vide :
+  n'importe lequel ; pour « CRIT seulement », choisissez CRIT). Variables : nom
+  de l'hôte, service, état, sortie du check.
+- **Un service revient OK** : un service signalé en problème est de nouveau
+  OK. Filtres : hôtes, dernier état de problème signalé. Variables : nom de
+  l'hôte, service, dernier état de problème, durée en minutes.
+- **Checkmk ne répond plus** : l'API REST ne répond pas deux fois de suite
+  (variables : adresse du site, erreur).
+
+Les problèmes déjà présents au démarrage de l'intégration ne sont pas signalés, mais leur fin l'est. Seuls les états confirmés (HARD) comptent : tant que Checkmk refait un check (état SOFT), rien n'est signalé. Un changement survenu pendant un redémarrage de Gladys ou de
+l'intégration est signalé une fois à la lecture suivante. Un problème en
+maintenance (du service ou de son hôte) n'est pas signalé, puisque Checkmk ne
+le notifie pas non plus ; s'il est toujours là à la fin de la maintenance, il
+est signalé à ce moment-là.
+
+### Actions
+
+- **Acquitter les problèmes d'un hôte** : acquitte dans Checkmk le problème
+  de l'hôte (DOWN, UNREACH) et chacun de ses services en problème pas encore
+  acquitté, avec un commentaire (vide : « Acquitté depuis Gladys »).
+  L'acquittement est persistant (jusqu'au retour à UP ou OK) et n'envoie
+  aucune notification. Renvoie le nombre acquitté. Désactivable par «
+  Autoriser l'acquittement depuis les scènes ».
+- **Lire les problèmes** : compte et liste les problèmes d'un hôte, ou de
+  tous, pour les actions suivantes : nombre, non traités, hôtes DOWN, services
+  CRIT, WARN et UNKNOWN, et la liste « hôte : problème ».
+
+### Idées de scènes
+
+- **Une lumière rouge quand le NAS tombe** : déclencheur « Un hôte tombe »,
+  hôte NAS → passer la lampe du salon au rouge et envoyer
+  `{{triggerEvent.data.host}} : {{triggerEvent.data.state_name}}`.
+- **Seulement les services critiques** : déclencheur « Un service pose
+  problème », état CRIT → message `{{triggerEvent.data.host}} /
+{{triggerEvent.data.service}} : {{triggerEvent.data.output}}`.
+- **Rapport du matin** : chaque jour à 8 h, « Lire les problèmes » → envoyer
+  le nombre et la liste quand le nombre dépasse 0.
+- **Vu depuis le canapé** : un bouton du tableau de bord ou une télécommande
+  Zigbee lance « Acquitter les problèmes d'un hôte » sur le NAS.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« Utilisateur ou secret d'automatisation refusé »** : vérifiez
+  l'utilisateur (un utilisateur d'automatisation, pas à mot de passe) et son
+  secret dans Setup → Users, et que les changements sont activés.
+- **« Checkmk ne répond pas »** : vérifiez l'adresse depuis la machine de
+  Gladys. `localhost` désigne le conteneur de l'intégration lui-même : utilisez
+  l'adresse IP de la machine de Checkmk.
+- **« Pas de site Checkmk à cette adresse »** : le nom du site manque ou est
+  faux dans l'adresse : c'est la première partie du chemin, `/monsite` dans
+  `http://192.168.1.2/monsite/check_mk/`.
+- **« Aucun hôte visible »** : le cœur de supervision du site est arrêté (`omd
+status`), ou l'utilisateur n'est dans aucun groupe de contacts des hôtes.
+- **« Certificat refusé »** : cochez « Accepter les certificats auto-signés »,
+  ou utilisez l'adresse en `http://` sur le réseau local.
+- **Un hôte manque** : il est hors du dossier ou des étiquettes, ou dans aucun
+  groupe de contacts de l'utilisateur.
+- **L'acquittement est refusé** : le rôle de l'utilisateur doit avoir le droit
+  d'acquitter les problèmes (« Normal monitoring user » l'a).
+
+## Limites
+
+- Un seul site Checkmk par intégration (les hôtes des sites distants, quand
+  l'utilisateur les voit depuis le site central, sont inclus).
+- États des hôtes et des services seulement : ni métriques, ni inventaire.
+- « Un service revient OK » se déclenche aussi quand un service en problème
+  est retiré de la supervision ; un hôte retiré de Checkmk ou du périmètre
+  disparaît sans signal.
+- 30 événements de scène au plus par lecture : une panne réseau peut en lever
+  des dizaines d'un coup ; le reste suit aux lectures suivantes.
+- Pas de quota sur l'API REST : chaque lecture envoie deux requêtes (trois une
+  fois par heure, pour la version).
+
+Sans lien avec Checkmk GmbH. Checkmk est une marque de Checkmk GmbH.

@@ -1,61 +1,181 @@
-# Demo Devices Template
+# Checkmk
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Bring your [Checkmk](https://checkmk.com/) monitoring into Gladys: each host
+becomes a device (up, services in WARN, CRIT and UNKNOWN, unhandled problems,
+downtime), a "Checkmk" device sums up the whole site, and your scenes react
+when a host goes down or a service fails — a red light when the NAS is down, a
+message when a disk is CRIT. A scene can also acknowledge the problems of a
+host, and a dashboard widget lists the problems in progress.
 
-## What you get
+The integration reads the REST API of your Checkmk site on your local
+network, with an automation user. Nothing goes through a cloud.
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+Tested against a real Checkmk 2.5 Community (official Docker image, a host
+monitored by its agent, hosts DOWN and UNREACH, local checks forced to WARN
+and CRIT, a downtime); 2.2 to 2.4 only through the same documented API.
+Feedback welcome:
+[github.com/guim31/gladys-checkmk/issues](https://github.com/guim31/gladys-checkmk/issues).
 
-## Configuration
+## What you need
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+- Gladys Assistant 5.1.0 or later.
+- Checkmk 2.2 or later, any edition (Community, formerly Raw, included),
+  reachable from the Gladys machine.
+- An automation user for Gladys. The role "Normal monitoring user" is enough:
+  it sees the hosts of its contact groups and may acknowledge their problems.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+## Getting started
 
-## Actions
+### 1. Create an automation user
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+In Checkmk, open **Setup → Users → Add user**:
 
-## Scenes
+- **Username**: e.g. `gladys`;
+- **Authentication**: "Automation secret for machine accounts", and copy the
+  secret;
+- **Roles**: "Normal monitoring user";
+- **Contact groups**: the groups of the hosts to follow (`all` by default).
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+Save, then **activate the changes**.
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+### 2. Configure the integration
+
+In Gladys, open the configuration of the integration:
+
+- **Site address**: the address you open Checkmk with, site name included,
+  e.g. `http://192.168.1.2/mysite`. Any page of the site copied from the
+  browser works too.
+- **Automation user** and **Automation secret**: the user of step 1.
+- **Folder (optional)**: the path of a Setup folder, e.g. `/homelab`, its
+  subfolders included. This is the path of the folder (its name in the URL),
+  not always its title. Empty: every host the user can see.
+- **Host labels (optional)**: `key:value` separated by commas, e.g.
+  `gladys:yes`; a host must carry them all. A key alone accepts any value.
+- **Refresh interval**: 30 seconds to 5 minutes (1 minute by default).
+- **Allow acknowledging from scenes**: untick to turn the acknowledgement
+  action off.
+- **Accept self-signed certificates**: for an `https://` address whose
+  certificate your browser does not trust either.
+- **Language of the names**: language of the feature names and of the scene
+  results.
+
+Save, then click **Test the connection**: it shows the Checkmk version, the
+number of hosts, of hosts down and of services in problem.
+
+### 3. Add the devices
+
+Open the **Discover** tab of the integration and add the hosts to follow, and
+the "Checkmk" device if you want the totals. The scene triggers work for every
+host, added to Gladys or not.
+
+## The devices
+
+Each **host**:
+
+| Feature            | Value                                                            |
+| ------------------ | ---------------------------------------------------------------- |
+| Host up            | 1 UP, 0 DOWN or UNREACH; empty while the host is PENDING         |
+| Services WARN      | number of services in WARN                                       |
+| Services CRIT      | number of services in CRIT                                       |
+| Services UNKNOWN   | number of services in UNKNOWN                                    |
+| Unhandled problems | host and service problems neither acknowledged nor in a downtime |
+| In downtime        | 1 while the host is in a scheduled downtime                      |
+
+The **Checkmk** device: Hosts down (DOWN or UNREACH), Services WARN, Services
+CRIT, Services UNKNOWN and Unhandled problems, over the hosts of the
+configuration.
+
+Values are sent to Gladys only when they change, and every 6 hours otherwise.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+The **Checkmk problems** widget shows three tiles — the hosts down, the
+services CRIT, the unhandled problems — and the problems: hosts DOWN, then
+UNREACH, then services CRIT, UNKNOWN and WARN, the newest first. Each row gives
+the service and its state, the host, ✓ once acknowledged and ⏸ in a downtime.
+Ten rows at most. **Refresh** reads Checkmk again. In its settings, choose
+hosts to show only theirs (empty: every host).
+
+## Scenes
+
+### Triggers
+
+- **A host goes down**: a host goes DOWN or UNREACH. Filter: hosts (empty:
+  any). Variables: host name, state (DOWN, UNREACH). A host going from DOWN to
+  UNREACH is not announced twice.
+- **A host is back up**: a host announced down is UP again. Variables: host
+  name, duration in minutes.
+- **A service has a problem**: a service enters WARN, CRIT or UNKNOWN, or
+  changes between them (WARN to CRIT, for example). Filters: hosts, states
+  (empty: any; for "CRIT only", choose CRIT). Variables: host name, service,
+  state, check output.
+- **A service is OK again**: a service announced in problem is OK again.
+  Filters: hosts, the last problem state announced. Variables: host name,
+  service, last problem state, duration in minutes.
+- **Checkmk no longer answers**: the REST API fails to answer twice in a row
+  (variables: site address, error).
+
+The problems already there when the integration starts are not announced, but their end is. Only confirmed (HARD) states count: while Checkmk retries a check (SOFT state), nothing is announced. A
+change that happens while Gladys or the integration restarts is announced once
+at the next read. A problem in a downtime (of the service or of its host) is
+not announced, as Checkmk does not notify it either; one that is still there
+when the downtime ends is announced then.
+
+### Actions
+
+- **Acknowledge the problems of a host**: acknowledges in Checkmk the host
+  problem (DOWN, UNREACH) and each of its services in problem not acknowledged
+  yet, with a comment (empty: "Acknowledged from Gladys"). The
+  acknowledgement is sticky (until the host is UP or the service OK) and sends
+  no notification. Returns the number acknowledged. Turn it off with "Allow
+  acknowledging from scenes".
+- **Read the problems**: counts and lists the problems of one host, or of all,
+  for the next actions: number, unhandled, hosts down, services CRIT, WARN and
+  UNKNOWN, and the list "host: problem".
+
+### Scene ideas
+
+- **A red light when the NAS is down**: trigger "A host goes down", host NAS →
+  turn the living-room lamp red and send
+  `{{triggerEvent.data.host}}: {{triggerEvent.data.state_name}}`.
+- **Critical services only**: trigger "A service has a problem", state CRIT →
+  message `{{triggerEvent.data.host}} / {{triggerEvent.data.service}}:
+{{triggerEvent.data.output}}`.
+- **Morning report**: every day at 8:00, "Read the problems" → send the count
+  and the list when the count is above 0.
+- **Seen from the couch**: a dashboard button or a Zigbee remote runs
+  "Acknowledge the problems of a host" on the NAS.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"User or automation secret refused"**: check the user (an automation
+  user, not a password one) and its secret in Setup → Users, and that the
+  changes are activated.
+- **"Checkmk does not answer"**: check the address from the Gladys machine.
+  `localhost` is the integration container itself: use the IP address of the
+  Checkmk machine.
+- **"No Checkmk site at this address"**: the site name is missing or wrong in
+  the address: it is the first part of the path, `/mysite` in
+  `http://192.168.1.2/mysite/check_mk/`.
+- **"No host visible"**: the monitoring core of the site is stopped (`omd
+status`), or the user is in no contact group of the hosts.
+- **"Certificate refused"**: tick "Accept self-signed certificates", or use
+  the `http://` address on the local network.
+- **A host is missing**: it is outside the folder or the labels, or not in a
+  contact group of the user.
+- **The acknowledgement is refused**: the role of the user needs the
+  permission to acknowledge problems ("Normal monitoring user" has it).
+
+## Limits
+
+- One Checkmk site per integration (the hosts of remote sites, when the user
+  sees them from the central site, are included).
+- Host states and service states only: no metrics, no inventory.
+- "A service is OK again" also fires when a service in problem is removed from
+  monitoring; a host removed from Checkmk or from the scope ends quietly.
+- At most 30 scene events per read: a network outage can raise dozens at once;
+  the rest follows at the next reads.
+- No quota on the REST API: each read sends two requests (three once an hour,
+  for the version).
+
+Not affiliated with Checkmk GmbH. Checkmk is a trademark of Checkmk GmbH.

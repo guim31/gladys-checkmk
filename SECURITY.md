@@ -30,6 +30,23 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- **Secrets**: the automation secret of the Checkmk user is a `secret` field
+  of the Gladys configuration. The integration reads it from Gladys at
+  startup, keeps it in memory, sends it only to the Checkmk address of the
+  configuration (the `Authorization: Bearer <user> <secret>` header), and
+  never writes it to `/data` nor to the logs. The secret has the rights of its
+  Checkmk user: a "Normal monitoring user" is enough, and the acknowledgement
+  scene action can be turned off.
+- **Stored in `/data`**: `checkmk-state.json`, the problems already seen (host
+  and service names, state, start time), the address, folder and labels of the
+  configuration, and a truncated hash of the user and secret, so that a restart neither repeats nor misses a scene event. No secret.
+- **Network**: requests go only to the Checkmk address typed in the
+  configuration, in HTTP or HTTPS. HTTPS certificates are verified unless the
+  user ticks "Accept self-signed certificates"; the integration opens no port
+  and calls no cloud service.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+Checkmk itself, and the hosts it monitors.
