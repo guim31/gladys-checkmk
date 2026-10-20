@@ -37,7 +37,10 @@ function assertReadable(hub) {
 
 // Checkmk refuses a problem that ended meanwhile (host: 422 "has no problem",
 // service: 400 "Service not found"): nothing left to acknowledge.
-const isGone = (err) => err.kind === ERROR_KINDS.API && [400, 422].includes(err.status);
+const isGone = (err) =>
+  err.kind === ERROR_KINDS.API &&
+  [400, 422].includes(err.status) &&
+  /not found|no problem|doesn't exist/i.test(err.message);
 
 export const SCENE_ACTIONS = {
   async acknowledge_host_problems(hub, { fields = {} }) {

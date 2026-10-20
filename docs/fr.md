@@ -123,8 +123,7 @@ hôtes).
 - **Checkmk ne répond plus** : l'API REST ne répond pas deux fois de suite
   (variables : adresse du site, erreur).
 
-Les problèmes déjà présents au démarrage de l'intégration ne sont pas
-signalés. Un changement survenu pendant un redémarrage de Gladys ou de
+Les problèmes déjà présents au démarrage de l'intégration ne sont pas signalés, mais leur fin l'est. Seuls les états confirmés (HARD) comptent : tant que Checkmk refait un check (état SOFT), rien n'est signalé. Un changement survenu pendant un redémarrage de Gladys ou de
 l'intégration est signalé une fois à la lecture suivante. Un problème en
 maintenance (du service ou de son hôte) n'est pas signalé, puisque Checkmk ne
 le notifie pas non plus ; s'il est toujours là à la fin de la maintenance, il

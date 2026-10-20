@@ -121,7 +121,7 @@ sus ajustes, elija hosts para mostrar solo los suyos (vacío: todos los hosts).
 - **Checkmk ya no responde**: la API REST no responde dos veces seguidas
   (variables: dirección del sitio, error).
 
-Los problemas ya presentes cuando arranca la integración no se anuncian. Un
+Los problemas ya presentes cuando arranca la integración no se anuncian, pero su fin sí. Solo cuentan los estados confirmados (HARD): mientras Checkmk repite un check (estado SOFT), no se anuncia nada. Un
 cambio que ocurre mientras Gladys o la integración se reinicia se anuncia una
 vez en la siguiente lectura. Un problema en mantenimiento (del servicio o de su
 host) no se anuncia, ya que Checkmk tampoco lo notifica; si sigue ahí cuando

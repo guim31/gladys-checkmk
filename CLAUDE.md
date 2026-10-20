@@ -275,7 +275,13 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
   ce qui reste à la fin l'est alors. Marqué annoncé seulement après acceptation par Gladys, 30
   événements au plus par lecture. Le filtre `state` est un `multi_select` de `"1"`…`"3"` ; pour
   `service_recovered`, il porte le dernier état de problème annoncé.
-- **Lectures concurrentes** : comme gladys-zabbix (génération, `fresh` après un acquittement).
+- **États SOFT** (colonne `state_type`, 0 = SOFT, 1 = HARD, lue en réel) : seuls les états HARD
+  créent, changent ou terminent un problème annoncé ; un état SOFT est ignoré par `transitions()`
+  (Checkmk ne notifie pas non plus), mais compte dans les appareils et le widget. Sans la
+  colonne, un état est pris pour HARD.
+- **Périmètre** : le secret n'en fait pas partie (seul l'utilisateur, haché) : changer de secret ne
+  ré-amorce rien. Un problème présent au premier passage voit sa fin annoncée (comme Zabbix).
+- **Lectures concurrentes** : comme gladys-zabbix (génération, `fresh` après un acquittement) ; une reconfiguration pendant l'envoi des événements arrête la lecture avant les états.
 - **Journaux** : changements d'état en debug ; l'info garde le démarrage, la version, la perte et
   le retour de Checkmk, une ligne par acquittement.
 

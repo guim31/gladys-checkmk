@@ -124,8 +124,7 @@ seinen Einstellungen kannst du Hosts wählen, um nur deren Probleme zu zeigen
 - **Checkmk antwortet nicht mehr**: Die REST-API antwortet zweimal
   hintereinander nicht (Variablen: Adresse der Site, Fehler).
 
-Probleme, die beim Start der Integration schon bestehen, werden nicht
-gemeldet. Eine Änderung, die passiert, während Gladys oder die Integration neu
+Probleme, die beim Start der Integration schon bestehen, werden nicht gemeldet, ihr Ende aber schon. Nur bestätigte Zustände (HARD) zählen: Solange Checkmk einen Check wiederholt (Zustand SOFT), wird nichts gemeldet. Eine Änderung, die passiert, während Gladys oder die Integration neu
 startet, wird beim nächsten Lesen einmal gemeldet. Ein Problem in einer
 Wartungszeit (des Service oder seines Hosts) wird nicht gemeldet, da Checkmk
 es auch nicht meldet; besteht es am Ende der Wartungszeit noch, wird es dann

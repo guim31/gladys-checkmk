@@ -18,6 +18,7 @@ test('the address of the site, or any page of it, gives the REST API URL', () =>
     'http://192.0.2.5/mysite/check_mk/': api,
     'http://192.0.2.5/mysite/check_mk/index.py?start_url=%2Fmysite%2Fcheck_mk%2Fdashboard.py': api,
     'http://192.0.2.5/mysite/check_mk/api/1.0/': api,
+    'http://192.0.2.5/check_mk_prod/check_mk/': 'http://192.0.2.5/check_mk_prod/check_mk/api/1.0',
     ' http://192.0.2.5:5000/cmk ': 'http://192.0.2.5:5000/cmk/check_mk/api/1.0',
     'https://monitoring.example.com/proxy/mysite/check_mk/dashboard.py':
       'https://monitoring.example.com/proxy/mysite/check_mk/api/1.0',

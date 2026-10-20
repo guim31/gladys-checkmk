@@ -60,6 +60,7 @@ test('snapshot: version, hosts and the services that are not OK, from the real a
       acknowledged: false,
       downtime: false,
       since: 1792479678,
+      hard: true,
       output: 'forced critical for the test',
     },
   );
@@ -99,6 +100,9 @@ test('scope: a folder with its subfolders, labels all required, a host still pen
   );
   // Only the services of the hosts in scope.
   assert.deepEqual([...new Set(snapshot.services.map((service) => service.host))], ['localhost']);
+  // A key alone must be a label of the host, not a property of every object.
+  snapshot = await client.snapshot({ labels: [{ key: 'constructor', value: null }] });
+  assert.equal(snapshot.hosts.length, 0);
   snapshot = await client.snapshot({ folder: '/' });
   assert.equal(snapshot.hosts[0].state, null);
   assert.equal(snapshot.hosts.length, 4);

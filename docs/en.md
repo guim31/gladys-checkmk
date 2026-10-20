@@ -115,7 +115,7 @@ hosts to show only theirs (empty: every host).
 - **Checkmk no longer answers**: the REST API fails to answer twice in a row
   (variables: site address, error).
 
-The problems already there when the integration starts are not announced. A
+The problems already there when the integration starts are not announced, but their end is. Only confirmed (HARD) states count: while Checkmk retries a check (SOFT state), nothing is announced. A
 change that happens while Gladys or the integration restarts is announced once
 at the next read. A problem in a downtime (of the service or of its host) is
 not announced, as Checkmk does not notify it either; one that is still there

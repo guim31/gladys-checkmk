@@ -60,7 +60,7 @@ export function parseApiUrl(raw) {
   }
   // Everything before /check_mk is the path of the site (a reverse proxy may
   // add a prefix); without it, the whole path.
-  const at = url.pathname.indexOf('/check_mk');
+  const at = url.pathname.search(/\/check_mk(\/|$)/);
   const path = (at >= 0 ? url.pathname.slice(0, at) : url.pathname).replace(/\/+$/, '');
   // Checkmk always serves a site under its name: no path, no API.
   if (!path) {

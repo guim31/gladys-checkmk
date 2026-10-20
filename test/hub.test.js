@@ -401,3 +401,29 @@ test('the core stopped (no host at all): an error, and nothing is taken for reso
   await w.hub.pollAll();
   assert.deepEqual(w.fake.sceneEvents, []);
 });
+
+test('a SOFT state is not announced until Checkmk confirms it (HARD)', async (t) => {
+  const w = await world(t);
+  w.checkmk.setHost('localhost', 1, { state_type: 0 });
+  w.checkmk.setService('localhost', 'Flaky', 2, { state_type: 0 });
+  await w.hub.pollAll();
+  assert.deepEqual(w.fake.sceneEvents, []);
+  w.checkmk.setHost('localhost', 0);
+  w.checkmk.setService('localhost', 'Flaky', 0);
+  await w.hub.pollAll();
+  assert.deepEqual(w.fake.sceneEvents, [], 'a SOFT blip that heals: nothing at all');
+  w.checkmk.setService('localhost', 'Flaky', 2, { state_type: 1 });
+  await w.hub.pollAll();
+  assert.deepEqual(keysOf(w), [TRIGGERS.SERVICE_PROBLEM]);
+});
+
+test('a new secret for the same user keeps the problems already seen', async (t) => {
+  const w = await world(t);
+  w.checkmk.setService('localhost', 'Kept', 2);
+  await w.hub.pollAll();
+  await w.fake.configUpdated({ ...BASE_CONFIG, secret: 'rotated' });
+  await w.fake.configUpdated(BASE_CONFIG);
+  w.checkmk.setService('localhost', 'Kept', 0);
+  await w.hub.pollAll();
+  assert.deepEqual(keysOf(w), [TRIGGERS.SERVICE_PROBLEM, TRIGGERS.SERVICE_RECOVERED]);
+});

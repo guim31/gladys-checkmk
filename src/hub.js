@@ -80,13 +80,13 @@ const signature = (config) =>
   JSON.stringify([config.apiUrl, config.username, config.secret, config.allowSelfSigned]);
 // What decides which problems are seen: another scope does not resolve the
 // problems of the previous one. The user is part of it (another user sees
-// other hosts), hashed with the secret: /data never holds either.
+// other hosts), hashed; a new secret for the same user changes nothing.
 const scopeOf = (config) =>
   JSON.stringify([
     config.apiUrl,
     config.folder,
     config.labels,
-    createHash('sha256').update(`${config.username}\n${config.secret}`).digest('hex').slice(0, 16),
+    createHash('sha256').update(config.username).digest('hex').slice(0, 16),
   ]);
 
 /** Key of a service in the saved state: a host name has no new line. */
@@ -317,7 +317,11 @@ export class CheckmkHub {
     ) {
       widgetChanged = true;
     }
+    const { generation } = this;
     await this.transitions();
+    if (generation !== this.generation) {
+      return false; // reconfigured while Gladys took the events
+    }
     await this.publishStates();
     return widgetChanged;
   }
@@ -366,7 +370,9 @@ export class CheckmkHub {
    * Compare the hosts and services with the ones already seen; fire the
    * scene events. A change is marked announced only once Gladys accepted its
    * event (Gladys restarting, a burst beyond the cap: sent at a next read),
-   * and a recovery is announced only if the problem was. A problem in a
+   * and a recovery is announced only if the problem was (or was already
+   * there at the first read). Only HARD states count: Checkmk does not
+   * notify a SOFT one either. A problem in a
    * downtime is not announced until the downtime is over (Checkmk does not
    * notify it either). The problems already there at the first read (or
    * after a change of scope) are recorded, not announced.
@@ -377,8 +383,8 @@ export class CheckmkHub {
     const events = [];
 
     for (const host of this.data.hosts.values()) {
-      if (host.state === null) {
-        continue; // PENDING: nothing known yet
+      if (host.state === null || !host.hard) {
+        continue; // PENDING, or SOFT: Checkmk is still retrying
       }
       let entry = knownHosts[host.name];
       if (isDown(host)) {
@@ -408,6 +414,9 @@ export class CheckmkHub {
       this.data.services.map((service) => [serviceKey(service.host, service.service), service]),
     );
     for (const [key, service] of current) {
+      if (!service.hard) {
+        continue; // SOFT: kept as is, neither new nor recovered
+      }
       let entry = knownServices[key];
       if (!entry) {
         entry = {

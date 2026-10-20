@@ -62,6 +62,7 @@ export const HOST_COLUMNS = [
   'labels',
   'filename',
   'last_state_change',
+  'state_type',
 ];
 export const SERVICE_COLUMNS = [
   'host_name',
@@ -71,6 +72,7 @@ export const SERVICE_COLUMNS = [
   'scheduled_downtime_depth',
   'last_state_change',
   'plugin_output',
+  'state_type',
 ];
 // Only the services that are not OK: on a real site, most services are.
 export const SERVICE_QUERY = JSON.stringify({ op: '!=', left: 'state', right: '0' });
@@ -111,7 +113,7 @@ export function inScope(host, { folder = '', labels = [] } = {}) {
     }
   }
   return labels.every(({ key, value }) =>
-    value === null ? key in host.labels : host.labels[key] === value,
+    value === null ? Object.hasOwn(host.labels, key) : host.labels[key] === value,
   );
 }
 
@@ -277,6 +279,8 @@ export class CheckmkClient {
         acknowledged: Number(host.acknowledged) === 1,
         downtime: Number(host.scheduled_downtime_depth) > 0,
         since: Number(host.last_state_change) || 0,
+        // SOFT (0) while Checkmk retries before alerting; HARD (1) once confirmed.
+        hard: Number(host.state_type) !== 0,
         folder: folderOf(host.filename),
         labels: host.labels && typeof host.labels === 'object' ? host.labels : {},
       }));
@@ -301,6 +305,7 @@ export class CheckmkClient {
         downtime:
           Number(service.scheduled_downtime_depth) > 0 || byName.get(service.host_name).downtime,
         since: Number(service.last_state_change) || 0,
+        hard: Number(service.state_type) !== 0,
         output: String(service.plugin_output ?? ''),
       }));
     return { ...info, hosts, services, total: all.length };
